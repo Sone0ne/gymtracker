@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from formats import (date_to_text,
                     time_to_text, text_to_time,)
-from settings import filters_of_repeats, date_text
+from settings import filters_of_repeats
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "database.sqlite")
@@ -19,13 +19,13 @@ def create_database():
     cur.executescript('''
     CREATE TABLE IF NOT EXISTS Types (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT
     );
 
     CREATE TABLE IF NOT EXISTS Types_body (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT
     );
 
@@ -38,7 +38,7 @@ def create_database():
 
     CREATE TABLE IF NOT EXISTS Exercises (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     time TEXT,
     type_body_id INTEGER NOT NULL,
     type_id INTEGER NOT NULL,
@@ -58,7 +58,7 @@ def create_database():
     );
 
     CREATE TABLE IF NOT EXISTS Tasks (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY UNIQUE,
     exercise_id INTEGER NOT NULL,
     weight INTEGER,
     count INTEGER NOT NULL,
@@ -76,9 +76,9 @@ def fill_db():
         ('Жим', 'Толкание от себя'),
         ('Тяга', 'Тяга к себе'),
         ('Сгибания рук', 'Сгибания рук в зоне предплечья или запястья'),
-        ('Сгибания ног', 'Сгибания рук в зоне колена или голеностопа'),
+        ('Сгибания ног', 'Сгибания ног в зоне колена или голеностопа'),
         ('Разгибания рук', 'Разгибания рук в зоне предплечья или запястья'),
-        ('Разгибания ног', 'Разгибания рук в зоне колена или голеностопа'),
+        ('Разгибания ног', 'Разгибания ног в зоне колена или голеностопа'),
         ('Бег', 'Бег или ходьба по дорожке'),
         ('Лестница', 'Подъем по лестнице'),
         ('Присед', 'Приседания, выпады или прыжки'),
@@ -91,17 +91,17 @@ def fill_db():
         ('Торс', 'Пресс, плечи'),
     ]
     Exercises = [
-        ('Жим лёжа', '0:05.20', 1, 1),
-        ('Подтягивания', '0:01.15', 2, 2),
-        ('Жим гантелей', '0:06.40', 1, 1)
+        ('Жим лёжа', '0:00.00', 1, 1),
+        ('Подтягивания', '0:00.00', 2, 2),
+        ('Жим гантелей', '0:00.00', 1, 1)
     ]
-    Tasks = [
-        (1, 75, 1, date_text, date_to_text(date_now))
-    ]
-    cur.executemany('INSERT INTO Types (name, description) VALUES(?, ?);', Types)
-    cur.executemany('INSERT INTO Types_body (name, description) VALUES(?, ?);', Types_body)
-    cur.executemany('INSERT INTO Exercises (name, time, type_body_id, type_id) VALUES(?, ?, ?, ?);', Exercises)
-    cur.executemany('INSERT INTO Tasks (exercise_id, weight, count, date, create_date) VALUES(?, ?, ?, ?, ?);', Tasks)
+    # Tasks = [
+    #     (1, 75, 1, date_text, date_to_text(date_now))
+    # ]
+    cur.executemany('INSERT OR IGNORE INTO Types (name, description) VALUES(?, ?);', Types)
+    cur.executemany('INSERT OR IGNORE INTO Types_body (name, description) VALUES(?, ?);', Types_body)
+    cur.executemany('INSERT OR IGNORE INTO Exercises (name, time, type_body_id, type_id) VALUES(?, ?, ?, ?);', Exercises)
+    # cur.executemany('INSERT OR IGNORE INTO Tasks (exercise_id, weight, count, date, create_date) VALUES(?, ?, ?, ?, ?);', Tasks)
 
     con.commit()
 
@@ -225,11 +225,11 @@ def get_tasks():  # dates  filter_name, filter_id
     return [list(i) for i in tasks]
 
 def get_types_body():
-    types_body = cur.execute('''SELECT name FROM Types_body''')
+    types_body = cur.execute('''SELECT name FROM Types_body ORDER BY id''')
     return types_body
 
 def get_exercises_names():
-    exercises_names = cur.execute('''SELECT name FROM Exercises''')
+    exercises_names = cur.execute('''SELECT name FROM Exercises ORDER BY id''')
     return exercises_names
 
 # create_database()

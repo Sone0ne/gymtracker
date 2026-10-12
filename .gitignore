@@ -25,3 +25,9 @@ build/
 
 # macOS
 .DS_Store
+
+# Database
+*.sqlite
+*.db
+database.sqlite
+training_active.flag

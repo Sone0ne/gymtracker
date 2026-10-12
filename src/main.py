@@ -3,6 +3,10 @@ import flet as ft
 from db_logic import (date_now, get_trainings, get_repeats, get_tasks, get_types_body, get_exercises_names,
                       create_repeat, create_training)
 from formats import text_to_date
+from create_db import init_db
+from states_files import is_training_active, set_training_active
+
+init_db()
 
 def main(page: ft.Page):
     page.title = "Gym Tracker"
@@ -21,33 +25,33 @@ def main(page: ft.Page):
             buttons_menu[int(num_btn) - 1].disabled = True
         page.update()
 
-    def trainings_view(data):
-        clear_content()
-        name_page_text.value = "Тренировки"
-        trainings = []
-        for training in get_trainings():
-            trainings.append(CardTraining(*training))
-        content_elements.controls = trainings
-        disable_button(data.control.data)
-
-    def tasks_view(data):
+    def tasks_view():
         clear_content()
         name_page_text.value = "Задачи"
         tasks = []
         for task in get_tasks():
             tasks.append(CardTask(*task))
         content_elements.controls = tasks
-        disable_button(data.control.data)
+        disable_button(1)
 
-    def profile_view(data):
+    def trainings_view():
+        clear_content()
+        name_page_text.value = "Тренировки"
+        trainings = []
+        for training in get_trainings():
+            trainings.append(CardTraining(*training))
+        content_elements.controls = trainings
+        disable_button(2)
+
+    def profile_view():
         clear_content()
         name_page_text.value = "Профиль"
-        disable_button(data.control.data)
+        disable_button(3)
 
-    def statistic_view(data):
+    def statistic_view():
         clear_content()
         name_page_text.value = "Статистика"
-        disable_button(data.control.data)
+        disable_button(4)
 
     def training_view(id_training):
         clear_content()
@@ -58,33 +62,33 @@ def main(page: ft.Page):
         content_elements.controls = repeats
         disable_button()
 
-    def training_now_view(data):
-        # def stop_training():
-        #     is_training(0)
-
-        # def is_training(bollean=None) -> bool:
-        #     with open("is_training.txt", "+w", encoding="utf-8") as file:
-        #         is_training_var = file.readline()
-        #         print(is_training_var)
-        #         if bollean:
-        #             file.write(str(bollean))
-        #     return is_training_var
+    def training_now_view():
+        if not is_training_active():
+            set_training_active(False)
 
         def write_repeat():
             training_now_id = len(get_trainings())
-            create_repeat(weight_field.value, counts_field.value, '1:0.0', picker_type_body.selected_index + 1, training_now_id)
+            create_repeat(weight_field.value, counts_field.value, '1:0.0', picker_type.selected_index + 1, training_now_id)
             weight_field.value = None
             counts_field.value = None
 
+        def stop_training():
+            set_training_active(False)
+            training_now_view()
+
         def start_training():
-            create_training(picker_type_body.selected_index + 1)
-            title_training.content.controls.value = "Выберите упражнение"
-            name_page_text.value = "Тренировка идет:"
-            start_button.disabled = True
+            if not is_training_active():
+                create_training(picker_type.selected_index + 1)
+                set_training_active(True)
 
-            picker_type_body.controls = exercises_names
+            stage_text.value = "Выберите упражнение"
+            name_page_text.value = "Тренировка"
+            start_stop_button.on_click = stop_training
+            start_stop_button.content = "Конец"
 
-            content_elements.controls += [
+            picker_type.controls = exercises_names
+
+            content_elements.controls.append(
                 ft.Stack(
                     controls=[
                         ft.Stack(
@@ -92,26 +96,21 @@ def main(page: ft.Page):
                                 weight_field,
                                 ft.Text("/", weight=ft.FontWeight.W_100, size=45, left=83, top=7, bottom=10, color=ft.Colors.LIGHT_BLUE_100),
                                 counts_field,
-                                repeat_button,
-                                stop_button],
+                                repeat_button],
                             left=10, right=10,
-                            top=10, bottom=10
-                        )
+                            top=10, bottom=10,
+                        ),
                     ]
-                ),
-                ft.Container(height=290),
-                ft.Stack(
-                    controls=[stop_button],
-                    height=80, width=400
-                    ),]
+                )
+            )
             page.update()
 
         clear_content()
-        name_page_text.value = "Создать тренировку"
+        name_page_text.value = "Тренировка"
         list_body_type = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_types_body()]
         exercises_names = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_exercises_names()]
 
-        picker_type_body = ft.CupertinoPicker(
+        picker_type = ft.CupertinoPicker(
             selected_index=0,
             item_extent=25,
             width=200,
@@ -124,20 +123,22 @@ def main(page: ft.Page):
         weight_field = ft.TextField(label="Вес", width=60, left=5, top=20, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
         counts_field = ft.TextField(label="Раз", width=60, left=115, top=20, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
 
-        title_training = ft.Card(content=ft.Stack(controls=ft.Text(
-            value="Выберите тип тренировки", weight=ft.FontWeight.W_600,
-            size=20, left=30, right=10, top=5, bottom=5)),
-            left=25, right=25, top=20, width=350, height=50)
+        start_stop_button = ft.Button(content="Начать",
+                                 on_click=start_training,
+                                width=100, height=40,
+                                right=10, top=10, bottom=5)
 
-        start_button = ft.Button(content="Начать", on_click=start_training,
-                                width=150, height=70,
-                                right=10, top=5)
-        repeat_button = ft.Button(content="Повтор", on_click=write_repeat,
+        repeat_button = ft.Button(content="Повтор",
+                                  on_click=write_repeat,
                                 width=150, height=70,
                                 right=0, top=10)
-        stop_button = ft.Button(content="Закончить тренировку", on_click=None,
-                                width=400, height=40,
-                                right=10, left=10, bottom=20)
+        information.controls.append(start_stop_button)
+
+        stage_text = ft.Text(value="Выберите тип тренировки", weight=ft.FontWeight.W_600,
+                            size=20, left=30, right=10, top=5, bottom=5)
+        title_training = ft.Card(content=ft.Stack(
+            controls=[stage_text]),
+            left=25, right=25, top=20, width=350, height=50)
 
         content_elements.controls = [
             ft.Stack(
@@ -145,12 +146,13 @@ def main(page: ft.Page):
                 height=90,
             ),
             ft.Stack(
-                controls=[picker_type_body, start_button],
+                controls=[picker_type],
                 height=80, width=400
             ),
         ]
-
-        disable_button(data.control.data)
+        if is_training_active():
+            start_training()
+        disable_button(5)
 
     class CardRepeat(ft.Card):
         def __init__(self, title: str,
@@ -247,20 +249,15 @@ def main(page: ft.Page):
     probel = ft.Container(width=15)
     name_page_text = ft.Text(
         value="",
-        width=300,
+        width=250,
         weight=ft.FontWeight.W_600,
         size=24
     )
-    info_text = ft.Text(
-        value="",
-        width=100,
-        weight=ft.FontWeight.W_600,
-        size=16
-    )
-    info_row = ft.Row(controls=[probel, name_page_text, info_text])
 
-    information = ft.Container(
-        content=info_row,
+    info_row = ft.Row(controls=[probel, name_page_text])
+
+    information = ft.Stack(
+        controls=[info_row],
         width=400,
         height=50,
     )
