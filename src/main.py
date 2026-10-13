@@ -62,15 +62,28 @@ def main(page: ft.Page):
         content_elements.controls = repeats
         disable_button()
 
+    exercises_names = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_exercises_names()]
+
+    picker_type = ft.CupertinoPicker(
+        selected_index=0,
+        item_extent=25,
+        width=200,
+        magnification=1.5,
+        squeeze=1.2,
+        use_magnifier=True,
+        looping=True,
+        controls=None,
+    )
+
     def training_now_view():
         if not is_training_active():
             set_training_active(False)
 
-        def write_repeat():
-            training_now_id = len(get_trainings())
-            create_repeat(weight_field.value, counts_field.value, '1:0.0', picker_type.selected_index + 1, training_now_id)
-            weight_field.value = None
-            counts_field.value = None
+        def write_exersice(type_exercise, id_training):
+            content_elements.controls.append(CardExerciseTraining(
+                type_exercise=type_exercise,
+                id_training=id_training
+            ))
 
         def stop_training():
             set_training_active(False)
@@ -80,71 +93,36 @@ def main(page: ft.Page):
             if not is_training_active():
                 create_training(picker_type.selected_index + 1)
                 set_training_active(True)
+            content_elements.controls[-1].controls.append(ft.Stack(
+                controls=[exercise_button],
+                height=80, width=400
+            ))
 
-            stage_text.value = "Выберите упражнение"
-            name_page_text.value = "Тренировка"
+            name_page_text.value = "Выберите упражнение"
             start_stop_button.on_click = stop_training
             start_stop_button.content = "Конец"
-
             picker_type.controls = exercises_names
 
-            content_elements.controls.append(
-                ft.Stack(
-                    controls=[
-                        ft.Stack(
-                            controls=[
-                                weight_field,
-                                ft.Text("/", weight=ft.FontWeight.W_100, size=45, left=83, top=7, bottom=10, color=ft.Colors.LIGHT_BLUE_100),
-                                counts_field,
-                                repeat_button],
-                            left=10, right=10,
-                            top=10, bottom=10,
-                        ),
-                    ]
-                )
-            )
             page.update()
 
         clear_content()
-        name_page_text.value = "Тренировка"
+        name_page_text.value = "Новая запись"
         list_body_type = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_types_body()]
-        exercises_names = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_exercises_names()]
 
-        picker_type = ft.CupertinoPicker(
-            selected_index=0,
-            item_extent=25,
-            width=200,
-            magnification=1.5,
-            squeeze=1.2,
-            use_magnifier=True,
-            looping=True,
-            controls=list_body_type,
-        )
-        weight_field = ft.TextField(label="Вес", width=60, left=5, top=20, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
-        counts_field = ft.TextField(label="Раз", width=60, left=115, top=20, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+        picker_type.controls = list_body_type
 
         start_stop_button = ft.Button(content="Начать",
                                  on_click=start_training,
-                                width=100, height=40,
-                                right=10, top=10, bottom=5)
+                                width=400, height=40,
+                                right=10, left=10, top=10, bottom=5)
 
-        repeat_button = ft.Button(content="Повтор",
-                                  on_click=write_repeat,
+        exercise_button = ft.Button(content="Создать",
+                                  on_click=lambda: write_exersice(picker_type.selected_index + 1, len(get_trainings())),
                                 width=150, height=70,
-                                right=0, top=10)
-        information.controls.append(start_stop_button)
-
-        stage_text = ft.Text(value="Выберите тип тренировки", weight=ft.FontWeight.W_600,
-                            size=20, left=30, right=10, top=5, bottom=5)
-        title_training = ft.Card(content=ft.Stack(
-            controls=[stage_text]),
-            left=25, right=25, top=20, width=350, height=50)
+                                right=10, top=10)
 
         content_elements.controls = [
-            ft.Stack(
-                controls=[title_training],
-                height=90,
-            ),
+            ft.Stack(start_stop_button, height=60),
             ft.Stack(
                 controls=[picker_type],
                 height=80, width=400
@@ -182,6 +160,46 @@ def main(page: ft.Page):
 
         def open_repeat(self):
             pass
+
+    class CardExerciseTraining(ft.Container):
+        def __init__(self, type_exercise: str, id_training: int):
+
+            exercises_values = [t[0] for t in get_exercises_names()]
+
+            self.repeat_button = ft.Button(content="Повтор",
+                                    on_click=lambda: self.write_repeat(),
+                                    width=100, height=70,
+                                    right=0, top=5)
+            self.weight_field = ft.TextField(label="Вес", width=60, height=30, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+            self.counts_field = ft.TextField(label="Раз", width=60, height=30, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+
+            super().__init__(
+                margin=5,
+                width=400,
+                height=100,
+                bgcolor=ft.Colors.BLACK_45,
+                border_radius=15,
+                content=ft.Stack(
+                            controls=[
+                                ft.Text(exercises_values[picker_type.selected_index + 1], top=10, right=10, left=20, size=20, weight=ft.FontWeight.W_600),
+                                ft.Stack(
+                                    controls=[
+                                        self.weight_field,
+                                        ft.Text("/", weight=ft.FontWeight.W_100, size=25, left=83, bottom=10, color=ft.Colors.LIGHT_BLUE_100),
+                                        self.counts_field,
+                                        self.repeat_button],
+                                    left=10, right=10,
+                                    top=10, bottom=10,
+                                ),
+
+                            ]
+                        )
+                    )
+
+        def write_repeat(self):
+            create_repeat(self.weight_field.value, self.counts_field.value, '1:0.0', picker_type.selected_index + 1, len(get_trainings()))
+            self.weight_field.value = None
+            self.counts_field.value = None
 
     class CardTraining(ft.Card):
         def __init__(self, id_training: int, date: str, type_body: str):
@@ -249,7 +267,7 @@ def main(page: ft.Page):
     probel = ft.Container(width=15)
     name_page_text = ft.Text(
         value="",
-        width=250,
+        width=270,
         weight=ft.FontWeight.W_600,
         size=24
     )
