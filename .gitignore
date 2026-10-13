@@ -29,5 +29,6 @@ build/
 # Database
 *.sqlite
 *.db
-database.sqlite
+database.sql
 training_active.flag
+src/database.sqlite

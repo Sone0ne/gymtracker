@@ -12,10 +12,10 @@ contourpy==1.4.0
 cookiecutter==2.7.1
 cycler==0.12.1
 fastapi==0.142.2
-flet==1.0.3
-flet-cli==1.0.3
-flet-desktop==1.0.3
-flet-platform-assets==1.0.3
+flet==1.0.4
+flet-cli==1.0.4
+flet-desktop==1.0.4
+flet-platform-assets==1.0.4
 flet-web==1.0.3
 fonttools==4.66.1
 h11==0.16.0
