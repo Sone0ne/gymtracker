@@ -1,6 +1,6 @@
 import flet as ft
 
-from db_logic import (date_now, get_trainings, get_repeats, get_tasks, get_types_body, get_exercises_names,
+from db_logic import (date_now, get_trainings, get_repeats, get_tasks, get_types_body, get_exercises_and_repeats, get_exercises_names,
                       create_repeat, create_training)
 from formats import text_to_date
 from create_db import init_db
@@ -8,6 +8,7 @@ from states_files import is_training_active, set_training_active
 
 init_db()
 
+print(get_exercises_and_repeats(2))
 def main(page: ft.Page):
     page.title = "Gym Tracker"
     page.window.width = 410
@@ -80,23 +81,46 @@ def main(page: ft.Page):
             set_training_active(False)
 
         def write_exersice(type_exercise, id_training):
-            content_elements.controls.append(CardExerciseTraining(
-                type_exercise=type_exercise,
-                id_training=id_training
-            ))
+            print(type_exercise, id_training)
+            exercise_card = CardExerciseTraining(
+                                type_exercise=type_exercise,
+                                id_training=id_training)
+            content_elements.controls.append(exercise_card)
+
+        def draw_exersices(id_training):
+            repeats = get_exercises_and_repeats(id_training)
+
+            exersices = {}
+
+            exercises_strings = [0] + [t[0] for t in get_exercises_names()]
+            for repeat in repeats:
+                if repeat[-1] in exersices:
+                    exersices[repeat[-1]].append(repeat[0:-1])
+                else:
+                    exersices[repeat[-1]] = [repeat[0:-1]]
+            for exercise in list(exersices.keys()):
+                exercise_card = CardExerciseTraining(
+                                    type_exercise=exercises_strings.index(exercise),
+                                    id_training=id_training)
+                exercise_card.draw_repeats(exersices[exercise])
+
+                content_elements.controls += [exercise_card]
+                page.update()
 
         def stop_training():
             set_training_active(False)
             training_now_view()
 
         def start_training():
-            if not is_training_active():
-                create_training(picker_type.selected_index + 1)
-                set_training_active(True)
             content_elements.controls[-1].controls.append(ft.Stack(
                 controls=[exercise_button],
                 height=80, width=400
             ))
+            if not is_training_active():
+                create_training(picker_type.selected_index + 1)
+                set_training_active(True)
+            else:
+                draw_exersices(len(get_trainings()))
 
             name_page_text.value = "Выберите упражнение"
             start_stop_button.on_click = stop_training
@@ -162,16 +186,18 @@ def main(page: ft.Page):
             pass
 
     class CardExerciseTraining(ft.Container):
-        def __init__(self, type_exercise: str, id_training: int):
+        def __init__(self, type_exercise: int, id_training: int):
 
             exercises_values = [t[0] for t in get_exercises_names()]
 
+            self.type_exercise = type_exercise
+            self.id_training = id_training
             self.repeat_button = ft.Button(content="Повтор",
                                     on_click=lambda: self.write_repeat(),
                                     width=100, height=70,
                                     right=0, top=5)
-            self.weight_field = ft.TextField(label="Вес", width=60, height=30, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
-            self.counts_field = ft.TextField(label="Раз", width=60, height=30, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+            self.weight_field = ft.TextField(label="Вес", width=60, height=40, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+            self.counts_field = ft.TextField(label="Раз", width=60, height=40, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
 
             super().__init__(
                 margin=5,
@@ -181,7 +207,8 @@ def main(page: ft.Page):
                 border_radius=15,
                 content=ft.Stack(
                             controls=[
-                                ft.Text(exercises_values[picker_type.selected_index + 1], top=10, right=10, left=20, size=20, weight=ft.FontWeight.W_600),
+                                ft.Text(exercises_values[self.type_exercise - 1], top=10, right=10, left=20, size=20, weight=ft.FontWeight.W_600),
+                                ft.Column(controls=[], width=200, top=40, left=20),
                                 ft.Stack(
                                     controls=[
                                         self.weight_field,
@@ -197,9 +224,16 @@ def main(page: ft.Page):
                     )
 
         def write_repeat(self):
-            create_repeat(self.weight_field.value, self.counts_field.value, '1:0.0', picker_type.selected_index + 1, len(get_trainings()))
+            create_repeat(self.weight_field.value, self.counts_field.value, '1:0.0', self.type_exercise, self.id_training)
+            self.content.controls[1].controls.append(ft.Stack(ft.Text(f'{self.weight_field.value} / {self.counts_field.value}')))
+            self.height += 30
             self.weight_field.value = None
             self.counts_field.value = None
+
+        def draw_repeats(self, repeats):
+            for repeat in repeats:
+                self.content.controls[1].controls.append(ft.Stack(ft.Text(f'{repeat[1]} / {repeat[2]}')))
+                self.height += 30
 
     class CardTraining(ft.Card):
         def __init__(self, id_training: int, date: str, type_body: str):

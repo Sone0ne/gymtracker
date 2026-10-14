@@ -156,12 +156,19 @@ def create_exercise(name, time_var, type_body, type_exercise):
 
 def get_exercises(filter_name, filter_id):
     exercises = cur.execute(f'''
-    SELECT Exercises.name, time, Types.name, Types_body.name
+    SELECT Exercises.id, Exercises.name, time, Types.name, Types_body.name
     FROM Exercises, Types_body, Types
     WHERE {filters_of_repeats[filter_name]} = {filter_id}   AND Exercises.type_body_id = Types_body.id
                                                             AND Exercises.type_id = Types.id;''')
     return [list(i) for i in exercises]
 
+def get_exercises_and_repeats(training_id):
+    exercises = cur.execute(f'''
+    SELECT Repeats.id, Repeats.weight, Repeats.count, Exercises.name
+    FROM Repeats, Exercises
+    WHERE training_id = {training_id} AND Repeats.exercise_id = Exercises.id
+    ORDER BY Exercises.name;''')
+    return [list(i) for i in exercises]
 
 def add_time_to_exercise(exercise_id, time_delta):
     cur.execute('''
