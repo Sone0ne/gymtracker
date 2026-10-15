@@ -253,7 +253,6 @@ def get_exercises_names():
 # create_repeat(25, 4, "0:36.0", 3, 2)
 
 # create_task(1, 12, 2, "01.01.2027")
-
 # add_time_to_exercise(1, time(hour=1, minute=1, second=5))
 
 # print(get_exercises_names())

@@ -167,7 +167,7 @@ def main(page: ft.Page):
                         ft.ListTile(
                             on_click=self.open_repeat,
                             data=id_repeat,
-                            title=ft.Text(f"{title.upper()}", weight=ft.FontWeight.W_600),
+                            title=ft.Text(f"{title.title()}", weight=ft.FontWeight.W_600),
                             subtitle=ft.Text(f"{weight}/{count}"),
                             leading=ft.Icon(ft.Icons.CAKE),
                             trailing=ft.Icon(ft.Icons.CHEVRON_RIGHT)),
@@ -190,19 +190,25 @@ def main(page: ft.Page):
 
             exercises_values = [t[0] for t in get_exercises_names()]
 
+            def init_none(self, field: str):
+                if field == 'weight':
+                    self.weight_field.value = None
+                elif field == 'count':
+                    self.counts_field.value = None
+
             self.type_exercise = type_exercise
             self.id_training = id_training
             self.repeat_button = ft.Button(content="Повтор",
                                     on_click=lambda: self.write_repeat(),
                                     width=100, height=70,
                                     right=0, top=5)
-            self.weight_field = ft.TextField(label="Вес", width=60, height=40, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
-            self.counts_field = ft.TextField(label="Раз", width=60, height=40, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+            self.weight_field = ft.TextField(value=0, label="Вес", width=60, height=50, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'weight'))
+            self.counts_field = ft.TextField(value=12, label="Раз", width=60, height=50, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'count'))
 
             super().__init__(
                 margin=5,
                 width=400,
-                height=100,
+                height=120,
                 bgcolor=ft.Colors.BLACK_45,
                 border_radius=15,
                 content=ft.Stack(
@@ -224,11 +230,12 @@ def main(page: ft.Page):
                     )
 
         def write_repeat(self):
-            create_repeat(self.weight_field.value, self.counts_field.value, '1:0.0', self.type_exercise, self.id_training)
-            self.content.controls[1].controls.append(ft.Stack(ft.Text(f'{self.weight_field.value} / {self.counts_field.value}')))
-            self.height += 30
-            self.weight_field.value = None
-            self.counts_field.value = None
+            if self.weight_field.value is not None and self.counts_field.value is not None:
+                create_repeat(self.weight_field.value, self.counts_field.value, '1:0.0', self.type_exercise, self.id_training)
+                self.content.controls[1].controls.append(ft.Stack(ft.Text(f'{self.weight_field.value} / {self.counts_field.value}')))
+                self.height += 30
+                self.weight_field.value = 0
+                self.counts_field.value = 12
 
         def draw_repeats(self, repeats):
             for repeat in repeats:
@@ -267,7 +274,7 @@ def main(page: ft.Page):
                         ft.ListTile(
                             data=id_task,
                             on_click=self.open_task,
-                            title=ft.Text(f"{title.upper()}", weight=ft.FontWeight.W_600),
+                            title=ft.Text(f"{title.title()}", weight=ft.FontWeight.W_600),
                             subtitle=ft.Text(f"{weight}/{count}"),
                             leading=ft.Icon(ft.Icons.CIRCLE_NOTIFICATIONS),
                             trailing=ft.Icon(ft.Icons.CHEVRON_RIGHT)),
