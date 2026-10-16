@@ -1,18 +1,19 @@
 import flet as ft
+from datetime import datetime as dt
 
 from db_logic import (date_now, get_trainings, get_repeats, get_tasks, get_types_body, get_exercises_and_repeats, get_exercises_names,
-                      create_repeat, create_training)
-from formats import text_to_date
+                      create_repeat, create_training, create_task)
+from formats import text_to_date, date_to_text
 from create_db import init_db
 from states_files import is_training_active, set_training_active
 
 init_db()
 
-print(get_exercises_and_repeats(2))
 def main(page: ft.Page):
     page.title = "Gym Tracker"
+    page.adaptive = True
     page.window.width = 410
-    page.window.height = 720
+    page.window.height = 750
     page.window.resizable = False
 
     def clear_content():
@@ -26,13 +27,52 @@ def main(page: ft.Page):
             buttons_menu[int(num_btn) - 1].disabled = True
         page.update()
 
+    exercises_names = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_exercises_names()]
+    picker_type_task = ft.CupertinoPicker(
+        selected_index=0,
+        item_extent=25,
+        width=140,
+        height=100,
+        magnification=1.5,
+        squeeze=1.2,
+        use_magnifier=True,
+        looping=True,
+        controls=exercises_names,
+    )
+    picker_date = ft.CupertinoDatePicker(
+        width=240,
+        item_extent=25,
+        height=100,
+        scale=0.9,
+        date_picker_mode=ft.CupertinoDatePickerMode.DATE,
+        minimum_year=dt.now().year,
+    )
+
+    task_weight_field = ft.TextField(value=None, label="Вес", width=60, height=50, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+    task_counts_field = ft.TextField(value=None, label="Раз", width=60, height=50, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+
+    def write_task():
+        if task_weight_field.value is not None and task_counts_field.value is not None:
+            create_task(picker_type_task.selected_index + 1, task_weight_field.value, task_counts_field.value, date_to_text(picker_date.value))
+            task_weight_field.value = None
+            task_counts_field.value = None
+        tasks_view()
+
+    task_button = ft.Button(content="Создать",
+                            on_click=write_task)
+
     def tasks_view():
         clear_content()
         name_page_text.value = "Задачи"
+        new_task_card = ft.Stack(controls=[
+            ft.Row(controls=[picker_type_task, picker_date], left=0, right=0, margin=0),
+            ft.Row(controls=[task_weight_field, ft.Stack(ft.Text("/", size=40)), task_counts_field, task_button], margin=20, bottom=0)], height=180, width=400)
         tasks = []
         for task in get_tasks():
             tasks.append(CardTask(*task))
-        content_elements.controls = tasks
+        content_elements.controls.append(new_task_card)
+
+        content_elements.controls += tasks
         disable_button(1)
 
     def trainings_view():
@@ -63,8 +103,6 @@ def main(page: ft.Page):
         content_elements.controls = repeats
         disable_button()
 
-    exercises_names = [ft.Text(*t, size=15, weight=ft.FontWeight.W_600) for t in get_exercises_names()]
-
     picker_type = ft.CupertinoPicker(
         selected_index=0,
         item_extent=25,
@@ -81,7 +119,6 @@ def main(page: ft.Page):
             set_training_active(False)
 
         def write_exersice(type_exercise, id_training):
-            print(type_exercise, id_training)
             exercise_card = CardExerciseTraining(
                                 type_exercise=type_exercise,
                                 id_training=id_training)
@@ -330,7 +367,7 @@ def main(page: ft.Page):
 
     elements = ft.Container(
         width=400,
-        height=530,
+        height=560,
         margin=1,
         bgcolor=ft.Colors.BLACK_26,
         border_radius=16,
