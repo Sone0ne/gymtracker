@@ -48,25 +48,25 @@ def main(page: ft.Page):
         minimum_year=dt.now().year,
     )
 
-    task_weight_field = ft.TextField(value=None, label="Вес", width=60, height=50, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
-    task_counts_field = ft.TextField(value=None, label="Раз", width=60, height=50, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100)
+    task_weight_field = ft.TextField(value=None, label="Вес", width=60, height=60, border_radius=20, border_color=ft.Colors.LIGHT_BLUE_100)
+    task_counts_field = ft.TextField(value=None, label="Раз", width=60, height=60, border_radius=20, border_color=ft.Colors.LIGHT_BLUE_100)
 
     def write_task():
-        if task_weight_field.value is not None and task_counts_field.value is not None:
+        if None not in (task_weight_field.value, task_counts_field.value):
             create_task(picker_type_task.selected_index + 1, task_weight_field.value, task_counts_field.value, date_to_text(picker_date.value))
             task_weight_field.value = None
             task_counts_field.value = None
         tasks_view()
 
     task_button = ft.Button(content="Создать",
-                            on_click=write_task)
+                            on_click=write_task, width=175, height=50)
 
     def tasks_view():
         clear_content()
         name_page_text.value = "Задачи"
         new_task_card = ft.Stack(controls=[
             ft.Row(controls=[picker_type_task, picker_date], left=0, right=0, margin=0),
-            ft.Row(controls=[task_weight_field, ft.Stack(ft.Text("/", size=40)), task_counts_field, task_button], margin=20, bottom=0)], height=180, width=400)
+            ft.Row(controls=[task_weight_field, ft.Text("/", size=40, height=60), task_counts_field, task_button], margin=20, bottom=0)], height=200, width=400)
         tasks = []
         for task in get_tasks():
             tasks.append(CardTask(*task))
@@ -239,8 +239,8 @@ def main(page: ft.Page):
                                     on_click=lambda: self.write_repeat(),
                                     width=100, height=70,
                                     right=0, top=5)
-            self.weight_field = ft.TextField(value=0, label="Вес", width=60, height=50, left=5, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'weight'))
-            self.counts_field = ft.TextField(value=12, label="Раз", width=60, height=50, left=115, bottom=10, border_radius=15, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'count'))
+            self.weight_field = ft.TextField(value=0, label="Вес", width=60, height=60, left=5, bottom=0, border_radius=20, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'weight'))
+            self.counts_field = ft.TextField(value=12, label="Раз", width=60, height=60, left=115, bottom=0, border_radius=20, border_color=ft.Colors.LIGHT_BLUE_100, on_click=lambda: init_none(self, 'count'))
 
             super().__init__(
                 margin=5,
@@ -255,7 +255,7 @@ def main(page: ft.Page):
                                 ft.Stack(
                                     controls=[
                                         self.weight_field,
-                                        ft.Text("/", weight=ft.FontWeight.W_100, size=25, left=83, bottom=10, color=ft.Colors.LIGHT_BLUE_100),
+                                        ft.Text("/", weight=ft.FontWeight.W_100, size=25, left=83, bottom=20, color=ft.Colors.LIGHT_BLUE_100),
                                         self.counts_field,
                                         self.repeat_button],
                                     left=10, right=10,
