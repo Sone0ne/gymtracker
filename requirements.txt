@@ -16,7 +16,7 @@ flet==1.0.4
 flet-cli==1.0.4
 flet-desktop==1.0.4
 flet-platform-assets==1.0.4
-flet-web==1.0.3
+flet-web==1.0.4
 fonttools==4.66.1
 h11==0.16.0
 httpcore==1.0.9
